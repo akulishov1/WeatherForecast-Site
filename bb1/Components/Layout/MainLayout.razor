@@ -1,0 +1,57 @@
+﻿@implements IDisposable
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<div class="page">
+    <Drawer DrawerHeader="drawerHeader">
+        <DrawerBody>
+            <div class="w-100">
+                <NavMenu></NavMenu>
+            </div>
+        </DrawerBody>
+        <DrawerTarget>
+            <div class="nav-buttons-container">
+                <NavLink href="@UrlGenerator.GetUrl(new Uri(NavigationManager.Uri).LocalPath, !ToggledSidebar)">
+                    <DxButton RenderStyle="@ButtonRenderStyle.Secondary" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="menu-button" IconCssClass="icon icon-menu"></DxButton>
+                </NavLink>
+                @if (new Uri(NavigationManager.Uri).LocalPath != "/") {
+                    <NavLink href="@UrlGenerator.GetUrl("/", ToggledSidebar)" class="button-link hidden">
+                                <DxButton RenderStyle="@ButtonRenderStyle.Dark" Text="Back to Home" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="menu-button-nav" IconCssClass="icon icon-back"></DxButton>
+                    </NavLink>
+                }
+            </div>
+            <div class="p-4">
+                @Body
+            </div>
+        </DrawerTarget>
+    </Drawer>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = UrlGenerator.ToggleSidebarName)]
+    public bool ToggledSidebar { get; set; }
+
+    private RenderFragment drawerHeader => @<div class="navigation-drawer-header">
+        <img class="logo" src="images/logo.svg" alt="DevExpress logo" />
+        <NavLink href="@UrlGenerator.GetUrl(new Uri(NavigationManager.Uri).LocalPath, !ToggledSidebar)">
+            <DxButton RenderStyle="@ButtonRenderStyle.Light" RenderStyleMode="@ButtonRenderStyleMode.Text" CssClass="menu-button-nav" IconCssClass="@(ToggledSidebar ? "icon icon-close" : "icon icon-menu")"></DxButton>
+        </NavLink>
+    </div>;
+
+    private string? currentUrl;
+
+    protected override void OnInitialized() {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose() {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+ 
+}
