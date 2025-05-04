@@ -38,11 +38,11 @@ namespace bb1.Services
                 var weatherRecord = new WeatherRecord
                 {
                     CellDate = ExtractionDataDate, // Assign the correct date
-                    Temperature = forecast.Temperature - 273.15,
-                    TemperatureFeels = forecast.TemperatureFeels - 273.15,
-                    MinTemperature = forecast.MinTemperature - 273.15,
-                    MaxTemperature = forecast.MaxTemperature - 273.15,
-                    WindSpeed = forecast.WindSpeed
+                    Temperature = (int)Math.Round(forecast.Temperature - 273.15),
+                    TemperatureFeels = (int)Math.Round(forecast.TemperatureFeels - 273.15),
+                    MinTemperature = (int)Math.Round(forecast.MinTemperature - 273.15),
+                    MaxTemperature = (int)Math.Round(forecast.MaxTemperature - 273.15),
+                    WindSpeed = (int)Math.Round(forecast.WindSpeed)
                 };
 
                 await _dbContext.WeatherRecords.AddAsync(weatherRecord);

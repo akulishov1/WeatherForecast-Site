@@ -27,39 +27,46 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
         <DxGridLayoutItem Area="mainContent">
             <Template>
                 <div class="main-content" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-                    @foreach (var WeatherRecord in DataList)
+                    @if (DataList.ContainsKey(DayNumber) && DataList[DayNumber] != null && DataList[DayNumber].Any())
                     {
-                        <DxGridLayout CssClass="h-60" ColumnSpacing="8px" RowSpacing="120px"
-                        style="background-color: rgba(155, 221, 255, 0.7); width: 700px; height: 500px; border-radius: 40px;">
-                            <Rows>
-                                <DxGridLayoutRow Areas="Time" />
-                                <DxGridLayoutRow Areas="Temperature" />
-                                <DxGridLayoutRow Areas="DayDataInfo" />
-                            </Rows>
-                            <Items>
-                                <DxGridLayoutItem Area="Time">
-                                    <Template>
-                                        <div class="gridlayout-header gridlayout-item" style="text-align: center; font-size: 50px;margin-bottom: 20px;">
-                                            Time is : @CurrentTime.ToString(@"hh\:mm\:ss")
-                                        </div>
-                                    </Template>
-                                </DxGridLayoutItem>
-                                <DxGridLayoutItem Area="Temperature">
-                                    <Template>
-                                        <div class="gridlayout-content gridlayout-item" style="text-align: center; font-size: 50px;">
-                                            @WeatherRecord.Temperature °C
-                                        </div>
-                                    </Template>
-                                </DxGridLayoutItem>
-                                <DxGridLayoutItem Area="DayDataInfo">
-                                    <Template>
-                                        <div class="gridlayout-footer gridlayout-item" style="text-align: center; font-size: 30px;">
-                                            Wind speed: @WeatherRecord.WindSpeed m/s - Temperature feels like: @WeatherRecord.TemperatureFeels °C
-                                        </div>
-                                    </Template>
-                                </DxGridLayoutItem>
-                            </Items>
-                        </DxGridLayout>
+                        foreach (var WeatherRecord in DataList[DayNumber])
+                        {
+                            <DxGridLayout CssClass="h-60" ColumnSpacing="8px" RowSpacing="120px"
+                                          style="background-color: rgba(155, 221, 255, 0.7); width: 700px; height: 500px; border-radius: 40px;">
+                                <Rows>
+                                    <DxGridLayoutRow Areas="Time" />
+                                    <DxGridLayoutRow Areas="Temperature" />
+                                    <DxGridLayoutRow Areas="DetalizedInfo" />
+                                </Rows>
+                                <Items>
+                                    <DxGridLayoutItem Area="Time">
+                                        <Template>
+                                            <div class="gridlayout-header gridlayout-item" style="text-align: center; font-size: 50px;margin-bottom: 20px;">
+                                                Time now : @CurrentTime.ToString(@"hh\:mm\:ss")
+                                            </div>
+                                        </Template>
+                                    </DxGridLayoutItem>
+                                    <DxGridLayoutItem Area="Temperature">
+                                        <Template>
+                                            <div class="gridlayout-content gridlayout-item" style="text-align: center; font-size: 50px;">
+                                                @WeatherRecord.Temperature °C
+                                            </div>
+                                        </Template>
+                                    </DxGridLayoutItem>
+                                    <DxGridLayoutItem Area="DetalizedInfo">
+                                        <Template>
+                                            <div class="gridlayout-footer gridlayout-item" style="text-align: center; font-size: 30px;">
+                                                Wind speed: @WeatherRecord.WindSpeed m/s - Temperature feels like: @WeatherRecord.TemperatureFeels °C
+                                            </div>
+                                        </Template>
+                                    </DxGridLayoutItem>
+                                </Items>
+                            </DxGridLayout>
+                        }
+                    }
+                    else
+                    {
+                        <div style="text-align: center; font-size: 40px;">No Data Available for Selected Day</div>
                     }
                 </div>
             </Template>
@@ -69,7 +76,7 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
             <Template>
                 <div style="display: flex; justify-content: center; align-items: center;">
                     <DxGridLayout CssClass="h-60" ColumnSpacing="8px" RowSpacing="10px"
-                    style="background-color: rgba(155, 221, 255, 0.7); width: 700px; height: 80px; border-radius: 40px;">
+                    style="background-color: rgba(155, 221, 255, 0.7); width: 800px; height: 150px; border-radius: 40px;">
                         <Rows>
                             <DxGridLayoutRow Areas="Buttons" />
                         </Rows>
@@ -78,27 +85,58 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
                                 <Template>
 
                                     <div class="gridlayout-header gridlayout-item" style="display: flex; justify-content: center; align-items: center; gap: 20px;">
-                                        <DxButton Click="PreviousDay" style="width: 180px; height: 60px;border-radius: 20px;background-color: burlywood; border-color:aqua">
-                                            <div style="display: flex; flex-direction:column; align-items:center;">
-                                                <span style="font-size: 16px;">Previous Day:</span>
+
+                                        <DxButton Click="() => Day(1)" style="width: 150px; height: 150px; border-radius: 0px; background-color: burlywood; border-color: aqua">
+                                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                                <span style="font-size: 16px;">Weather Data for Day 1:</span>
                                                 <span style="font-size: 16px; margin-top: 5px;">
-                                                    @(" " + (PreviousDayDataList != null && PreviousDayDataList.Any()
-                                                                                                                                                            ? string.Join(", ", PreviousDayDataList.Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
-                                                                                                                                                            : "No Data"))
+                                                    @(DataList.ContainsKey(1) && DataList[1].Any()
+                                                        ? string.Join(", ", DataList[1].Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
+                                                        : "No Data")
                                                 </span>
                                             </div>
                                         </DxButton>
 
-                                        <span style="font-size: 30px; font-weight: bold;">@DayNumber</span>
-
-                                        <DxButton Click="NextDay" style="width: 180px; height: 60px;border-radius: 20px;background-color: burlywood; border-color:aqua">
+                                        <DxButton Click="() => Day(2)" style="width: 150px; height: 150px; border-radius: 0px; background-color: burlywood; border-color: aqua">
                                             <div style="display: flex; flex-direction: column; align-items: center;">
-                                                <span style="font-size: 16px;">Next Day:</span>
+                                                <span style="font-size: 16px;">Weather Data for Day 2:</span>
                                                 <span style="font-size: 16px; margin-top: 5px;">
-                                                    @(" " + (NextDayDataList != null && NextDayDataList.Any()
-                                                                                                                                                            ? string.Join(", ", NextDayDataList.Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
-                                                                                                                                                            : "No Data"))
+                                                    @(DataList.ContainsKey(2) && DataList[2].Any()
+                                                        ? string.Join(", ", DataList[2].Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
+                                                        : "No Data")
+                                                </span>
+                                            </div>
+                                        </DxButton>
 
+                                        <DxButton Click="() => Day(3)" style="width: 150px; height: 150px; border-radius: 0px; background-color: burlywood; border-color: aqua">
+                                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                                <span style="font-size: 16px;">Weather Data for Day 3:</span>
+                                                <span style="font-size: 16px; margin-top: 5px;">
+                                                    @(DataList.ContainsKey(3) && DataList[3].Any()
+                                                        ? string.Join(", ", DataList[3].Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
+                                                        : "No Data")
+                                                </span>
+                                            </div>
+                                        </DxButton>
+
+                                        <DxButton Click="() => Day(4)" style="width: 150px; height: 150px; border-radius: 0px; background-color: burlywood; border-color: aqua">
+                                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                                <span style="font-size: 16px;">Weather Data for Day 4:</span>
+                                                <span style="font-size: 16px; margin-top: 5px;">
+                                                    @(DataList.ContainsKey(4) && DataList[4].Any()
+                                                        ? string.Join(", ", DataList[4].Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
+                                                        : "No Data")
+                                                </span>
+                                            </div>
+                                        </DxButton>
+
+                                        <DxButton Click="() => Day(5)" style="width: 150px; height: 150px; border-radius: 0px; background-color: burlywood; border-color: aqua">
+                                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                                <span style="font-size: 16px;">Weather Data for Day 5:</span>
+                                                <span style="font-size: 16px; margin-top: 5px;">
+                                                    @(DataList.ContainsKey(5) && DataList[5].Any()
+                                                        ? string.Join(", ", DataList[5].Select(day => $"{day.Temperature}°C - {day.WindSpeed} m/s"))
+                                                        : "No Data")
                                                 </span>
                                             </div>
                                         </DxButton>
@@ -117,37 +155,29 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
     private DateTime CurrentDate;
     private TimeSpan CurrentTime;
 
-    private int MaxDayID;
     private int DayNumber;
-    private int PreviousDayNumber;
     private int NextDayNumber;
 
-
-    private List<WeatherRecord> PreviousDayDataList = new List<WeatherRecord>();
     private List<WeatherRecord> NextDayDataList = new List<WeatherRecord>();
-    private List<WeatherRecord> DataList = new List<WeatherRecord>();
+    private Dictionary<int, List<WeatherRecord>> DataList = new Dictionary<int, List<WeatherRecord>>();
 
     protected override async Task OnInitializedAsync()
     {
+        DayNumber = 1;
         CurrentDate = WeatherRecordsService.ServerDateCheck();
         CurrentTime = WeatherRecordsService.GetServerTime();
 
         _ = Task.Run(async () =>
-    {
-        while (true)
         {
-            CurrentTime = WeatherRecordsService.GetServerTime();
-            StateHasChanged();
-            await Task.Delay(1000); // Refresh every second
-        }
-    });
-
-        MaxDayID = 5;
-        DayNumber = 1;
-
+            while (true)
+            {
+                CurrentTime = WeatherRecordsService.GetServerTime();
+                StateHasChanged();
+                await Task.Delay(1000); // Refresh every second
+            }
+        });
 
         var isUpToDate = await WeatherRepositoryService?.IsWeatherDataUpToDateAsync();
-
         var isTableEmpty = await WeatherRepositoryService.IsTableEmptyAsync();
 
         if (!isUpToDate || isTableEmpty)
@@ -158,61 +188,28 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
         }
 
         var ReceivedDayData = await WeatherRecordsService.GetDataByDayNumberAsync(DayNumber);
-        DataList = ReceivedDayData.Where(day => day.Id == DayNumber).ToList();
-    }
-
-
-    private async Task PreviousDay()
-    {
-        if (DayNumber > 1)
+        if (!DataList.ContainsKey(DayNumber))
         {
-            // Move to previous day
-            DayNumber--;
-            DataList = await WeatherRecordsService.GetDataByDayNumberAsync(DayNumber);
-
-            // Update next and previous day numbers
-            PreviousDayNumber = DayNumber - 1;
-            NextDayNumber = DayNumber + 1;
-
-            // Ensure boundaries for PreviousDayDataList
-            PreviousDayDataList = PreviousDayNumber < 1
-                ? null // Set PreviousDayDataList to null only when PreviousDayNumber is below 1
-                : await WeatherRecordsService.GetDataByDayNumberAsync(PreviousDayNumber);
-
-            // Ensure boundaries for NextDayDataList
-            NextDayDataList = DayNumber == MaxDayID
-                ? null // Set NextDayDataList to null only when DayNumber is at MaxDayID
-                : await WeatherRecordsService.GetDataByDayNumberAsync(NextDayNumber);
-
-            StateHasChanged();
+            DataList[DayNumber] = ReceivedDayData.Where(day => day.Id == DayNumber).ToList();
         }
     }
 
-    private async Task NextDay()
+    private async Task Day(int selectedDayNumber)
     {
-        if (DayNumber < MaxDayID)
+        DayNumber = selectedDayNumber;
+
+        var receivedData = await WeatherRecordsService.GetDataByDayNumberAsync(DayNumber);
+
+        if (receivedData != null && receivedData.Any())
         {
-            // Move to next day
-            DayNumber++;
-            CurrentDate = CurrentDate.AddDays(DayNumber);
-            DataList = await WeatherRecordsService.GetDataByDayNumberAsync(DayNumber);
-
-            // Update next and previous day numbers
-            PreviousDayNumber = DayNumber - 1;
-            NextDayNumber = DayNumber + 1;
-
-            // Ensure boundaries for PreviousDayDataList
-            PreviousDayDataList = PreviousDayNumber >= 1
-                ? await WeatherRecordsService.GetDataByDayNumberAsync(PreviousDayNumber)
-            : null;
-
-            // Ensure boundaries for NextDayDataList
-            NextDayDataList = DayNumber == MaxDayID
-                ? null // Set NextDayDataList to null only when DayNumber is MaxDayID
-                : await WeatherRecordsService.GetDataByDayNumberAsync(NextDayNumber);
-
-            StateHasChanged();
+            DataList[DayNumber] = receivedData.Where(day => day.Id == DayNumber).ToList();
         }
+        else
+        {
+            DataList[DayNumber] = null; // Set to null if no data exists
+        }
+
+        StateHasChanged();
     }
 
 

@@ -11,6 +11,8 @@ namespace bb1.Components.Models
         public double WindSpeed { get; set; }
     }
 
+    
+
     public class WeatherRecord
     {
         public int Id { get; set; }
