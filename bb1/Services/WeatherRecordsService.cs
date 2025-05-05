@@ -1,6 +1,5 @@
 ﻿using bb1.Components.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace bb1.Services
 {
