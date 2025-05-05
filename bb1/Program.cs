@@ -33,7 +33,6 @@ builder.Services.AddAuthentication(options => {
 var DefaultConnectionStringToSQL = builder.Configuration.GetConnectionString("DbConnectionParameters");
 builder.Services.AddDbContext<WeatherDbContext>(options => options.UseSqlServer(DefaultConnectionStringToSQL));
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

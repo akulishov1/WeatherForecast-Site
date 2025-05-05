@@ -22,9 +22,16 @@ namespace bb1.Services
 
             public async Task<WeatherData> FetchWeatherDataAsync()
             {
+
                 try
                 {
-                    var response = await _httpClient.GetStringAsync("https://api.openweathermap.org/data/2.5/forecast?lat=49.4447888&lon=32.0587805&units=metric&appid=5bf61eb32d958014152c8c08e4a3ad33");
+                            var config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json")
+                    .Build();
+
+                    string apiKey = config["WeatherSettings:ApiKey"];
+
+                    var response = await _httpClient.GetStringAsync("https://api.openweathermap.org/data/2.5/forecast?lat=49.4447888&lon=32.0587805&units=metric&appid={apiKey}");
 
                     var jsonDocument = JsonDocument.Parse(response);
                     var root = jsonDocument.RootElement;
