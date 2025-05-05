@@ -18,7 +18,5 @@ namespace bb1.Services
         }
 
         public TimeSpan GetServerTime() => DateTime.Now.TimeOfDay;
-
-        public DateTime ServerDateCheck() => DateTime.Now.Date;
     }
 }

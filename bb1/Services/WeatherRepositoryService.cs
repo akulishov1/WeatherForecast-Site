@@ -46,10 +46,10 @@ namespace bb1.Services
                     continue;
 
                 // Remove fractional parts rather than rounding.
-                double tempMorn = Math.Truncate(dayForecasts[0].Temperature - 273.15);
-                double tempDay = Math.Truncate(dayForecasts[1].Temperature - 273.15);
-                double tempEve = Math.Truncate(dayForecasts[2].Temperature - 273.15);
-                double tempNight = Math.Truncate(dayForecasts[3].Temperature - 273.15);
+                double tempMorn = Math.Truncate(dayForecasts[0].Temperature);
+                double tempDay = Math.Truncate(dayForecasts[1].Temperature);
+                double tempEve = Math.Truncate(dayForecasts[2].Temperature);
+                double tempNight = Math.Truncate(dayForecasts[3].Temperature);
 
                 // Remove fractions for wind speeds.
                 double windMorn = Math.Truncate(dayForecasts[0].WindSpeed);
