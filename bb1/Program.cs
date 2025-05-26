@@ -3,6 +3,7 @@ using bb1.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using bb1.Components.Models;
+using static bb1.Services.WeatherDataRequestService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,8 @@ builder.Services.AddScoped<WeatherDataRequestService.WeatherService>();
 builder.Services.AddHttpClient<WeatherDataRequestService.WeatherService>();
 builder.Services.AddScoped<WeatherRepositoryService>();
 builder.Services.AddScoped<WeatherRecordsService>();
+builder.Services.AddHttpClient<IWeatherService, WeatherService>();
+builder.Services.AddHttpClient<IWeatherService, WeatherDataRequestService.WeatherService>();
 
 builder.Services.AddCascadingAuthenticationState();
 
@@ -31,7 +34,7 @@ builder.Services.AddAuthentication(options => {
     .AddIdentityCookies();
 
 var DefaultConnectionStringToSQL = builder.Configuration.GetConnectionString("DbConnectionParameters");
-builder.Services.AddDbContext<WeatherDbContext>(options => options.UseSqlServer(DefaultConnectionStringToSQL));
+builder.Services.AddDbContextFactory<WeatherDbContext>(options => options.UseSqlServer(DefaultConnectionStringToSQL));
 
 var app = builder.Build();
 

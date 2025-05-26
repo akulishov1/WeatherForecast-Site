@@ -1,66 +1,58 @@
 ﻿using bb1.Components.Models;
+using bb1.Services.WDRequestListFormats;
 using System.Text.Json;
 
 namespace bb1.Services
 {
     public class WeatherDataRequestService
     {
-        public class WeatherData
+        public interface IWeatherService
         {
-            public List<DailyForecast> List { get; set; }
+            Task<WeatherDataCollection> FetchWeatherDataAsync(int siteId);
         }
-
-        public class WeatherService
+        public class WeatherService : IWeatherService
         {
             private readonly HttpClient _httpClient;
+            private readonly IConfiguration _configuration;
 
-            public WeatherService(HttpClient httpClient)
+            public WeatherService(HttpClient httpClient, IConfiguration configuration)
             {
                 _httpClient = httpClient;
+                _configuration = configuration;
             }
 
-
-            public async Task<WeatherData> FetchWeatherDataAsync()
+            public async Task<WeatherDataCollection> FetchWeatherDataAsync(int siteId)
             {
-
                 try
                 {
-                            var config = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json")
-                    .Build();
+                    string apiUrl;
+                    IWeatherDataParser parser;
 
-                    string apiKey = config["WeatherSettings:ApiKey"];
-
-                    var response = await _httpClient.GetStringAsync("https://api.openweathermap.org/data/2.5/forecast?lat=49.4447888&lon=32.0587805&units=metric&appid={apiKey}");
-
-                    var jsonDocument = JsonDocument.Parse(response);
-                    var root = jsonDocument.RootElement;
-
-                    var weatherData = new WeatherData { List = new List<DailyForecast>() };
-
-                    int counter = 0;
-                    foreach (var item in root.GetProperty("list").EnumerateArray())
+                    switch (siteId)
                     {
-                        // Now use odd-numbered items: indices 1, 3, 5, …
-                        if (counter % 2 == 1)
-                        {
-                            var forecast = new DailyForecast
-                            {
-                                Temperature = item.GetProperty("main").GetProperty("temp").GetSingle(),
-                                WindSpeed = item.GetProperty("wind").GetProperty("speed").GetSingle()
-                            };
+                        case 1:
+                            string apiKey = _configuration["WeatherSettings:ApiKey"];
+                            apiUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat=49.44&lon=32.05&units=metric&appid={apiKey}";
+                            parser = new OpenWeatherMapParser();
+                            break;
 
-                            weatherData.List.Add(forecast);
-                        }
-                        counter++;
+                        case 2:
+                            apiUrl = "https://api.open-meteo.com/v1/forecast?latitude=49.44&longitude=32.05&hourly=temperature_2m,wind_speed_10m";
+                            parser = new OpenMeteoParser();
+                            break;
+
+                        default:
+                            throw new ArgumentException("Unknown site ID");
                     }
 
-                    return weatherData;
+                    var response = await _httpClient.GetStringAsync(apiUrl);
+                    var json = JsonDocument.Parse(response);
+                    return parser.Parse(json.RootElement);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error fetching weather data: {ex.Message}");
-                    return new WeatherData { List = new List<DailyForecast>() };
+                    return new WeatherDataCollection();
                 }
             }
         }

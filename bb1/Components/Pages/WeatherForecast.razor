@@ -1,8 +1,10 @@
 ﻿@page "/"
 @rendermode InteractiveServer
-@inject Services.WeatherRecordsService WeatherRecordsService
-@inject Services.WeatherDataRequestService WeatherDataRequestService
-@inject bb1.Services.WeatherRepositoryService WeatherRepositoryService
+@inject WeatherRecordsService WeatherRecordsService
+@inject WeatherDataRequestService WeatherDataRequestService
+@inject WeatherRepositoryService WeatherRepositoryService
+@inject WeatherDataRequestService.IWeatherService WeatherService
+@inject WeatherDataRequestService.IWeatherService _weatherService
 @using Models
 @using bb1.Services
 
@@ -16,6 +18,22 @@
     background-color: lightblue;
     }
 </style>
+<div style="position: fixed; top: 100px; left: 450px; z-index: 1000;">
+    <select @onchange="OnSiteChanged" class="form-select" style="width: auto; min-width: 150px;">
+
+        @foreach (var site in SiteDataSelectionList.SiteSelection)
+        {
+
+            <option value="@site.id" selected="@((site.id == SelectedSiteID) ? "selected" : null)">
+
+                @site.name
+
+            </option>
+
+        }
+
+    </select>
+</div>
 
 <DxGridLayout CssClass="main-container" ColumnSpacing="8px" RowSpacing="60px"
 style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -111,17 +129,17 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
                                         {
                                             int currentDay = i; // capture current value
                                             <DxButton Click="@(async () => await Day(currentDay))"
-                                                      style="width:150px; height:150px; border-radius:10px; background-color:burlywood; border-color:aqua">
+                                            style="width:150px; height:150px; border-radius:10px; background-color:burlywood; border-color:aqua">
                                                 <div style="display: flex; flex-direction: column; align-items: center;">
                                                     <span style="font-size: 16px;">
                                                         @(DataList.ContainsKey(currentDay) && DataList[currentDay].Any()
-                                                            ? DataList[currentDay].First().CellDate.ToString("dddd")
-                                                            : $"Weather Data for {currentDay}")
+                                                                ? DataList[currentDay].First().CellDate.ToString("dddd")
+                                                                : $"Weather Data for {currentDay}")
                                                     </span>
                                                     <span style="font-size: 16px; margin-top: 5px;">
                                                         @(DataList.ContainsKey(currentDay) && DataList[currentDay].Any()
-                                                            ? string.Join(", ", DataList[currentDay].Select(day => $"{day.AvgTemperature}°C - {day.AvgWindSpeed} m/s"))
-                                                            : "No Data")
+                                                                ? string.Join(", ", DataList[currentDay].Select(day => $"{day.AvgTemperature}°C - {day.AvgWindSpeed} m/s"))
+                                                                : "No Data")
                                                     </span>
                                                 </div>
                                             </DxButton>
@@ -140,43 +158,69 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
 @code {
     private TimeSpan CurrentTime;
     private int DayNumber = 1;
+    private int SelectedSiteID = 1;
+    private int PreviousSiteID = 1;
+    private CancellationTokenSource _cts = new();
 
     // Holds WeatherRecord objects fetched for each day.
-    private Dictionary<int, List<WeatherRecord>> DataList = new Dictionary<int, List<WeatherRecord>>();
+    private Dictionary<int, List<WeatherRecordBase>> DataList = new Dictionary<int, List<WeatherRecordBase>>();
 
     protected override async Task OnInitializedAsync()
     {
-        // Initialize the current time.
         CurrentTime = WeatherRecordsService.GetServerTime();
 
-        // Update the time every second.
         _ = Task.Run(async () =>
-        {
-            while (true)
-            {
-                CurrentTime = WeatherRecordsService.GetServerTime();
-                // Use InvokeAsync to marshal the call to the correct synchronization context.
-                await InvokeAsync(StateHasChanged);
-                await Task.Delay(1000);
-            }
-        });
+       {
+           while (!_cts.Token.IsCancellationRequested)
+           {
+               CurrentTime = WeatherRecordsService.GetServerTime();
+               await InvokeAsync(StateHasChanged);
+               await Task.Delay(1000, _cts.Token);
+           }
+       });
 
-        // Check if the weather data is up-to-date and if the table is empty.
-        var isUpToDate = await WeatherRepositoryService?.IsWeatherDataUpToDateAsync();
-        var isTableEmpty = await WeatherRepositoryService.IsTableEmptyAsync();
+        var isUpToDate = await WeatherRepositoryService.IsWeatherDataUpToDateAsync(SelectedSiteID);
+        var isTableEmpty = await WeatherRepositoryService.IsTableEmptyAsync(SelectedSiteID);
 
         if (!isUpToDate || isTableEmpty)
         {
-            var weatherService = new WeatherDataRequestService.WeatherService(new HttpClient());
-            var weatherData = await weatherService.FetchWeatherDataAsync();
-            await WeatherRepositoryService.SaveWeatherDataAsync(weatherData);
+            var weatherData = await _weatherService.FetchWeatherDataAsync(SelectedSiteID);
+            await WeatherRepositoryService.SaveWeatherDataAsync(SelectedSiteID, weatherData);
         }
 
-        // Populate DataList for days 1 to 5.
-        for (int day = 1; day <= 5; day++) // Adjust based on available day count.
+        for (int day = 1; day <= 5; day++)
         {
-            var receivedData = await WeatherRecordsService.GetDataByDayNumberAsync(day);
-            DataList[day] = receivedData?.Where(record => record.Id == day).ToList() ?? new List<WeatherRecord>();
+            var record = await WeatherRecordsService.GetRecordByIdAndSiteIDAsync(SelectedSiteID, day);
+            DataList[day] = record is not null ? new List<WeatherRecordBase> { record } : new List<WeatherRecordBase>();
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+
+    private async Task OnSiteChanged(ChangeEventArgs e)
+    {
+        int newSiteID = int.Parse(e.Value?.ToString() ?? "1");
+
+        if (newSiteID != PreviousSiteID)
+        {
+            SelectedSiteID = newSiteID;
+
+            var weatherData = await _weatherService.FetchWeatherDataAsync(SelectedSiteID);
+            await WeatherRepositoryService.SaveWeatherDataAsync(SelectedSiteID, weatherData);
+
+            for (int day = 1; day <= 5; day++)
+            {
+                var record = await WeatherRecordsService.GetRecordByIdAndSiteIDAsync(SelectedSiteID, day);
+                DataList[day] = record is not null ? new List<WeatherRecordBase> { record } : new List<WeatherRecordBase>();
+            }
+
+            PreviousSiteID = SelectedSiteID;
+
+            StateHasChanged();
         }
     }
 
@@ -184,8 +228,9 @@ style="width: 100%; height: 100%; display: flex; flex-direction: column; justify
     private async Task Day(int selectedDayNumber)
     {
         DayNumber = selectedDayNumber;
-        var receivedData = await WeatherRecordsService.GetDataByDayNumberAsync(DayNumber);
-        DataList[DayNumber] = receivedData?.Where(record => record.Id == DayNumber).ToList() ?? new List<WeatherRecord>();
+
+        var record = await WeatherRecordsService.GetRecordByIdAndSiteIDAsync(SelectedSiteID, DayNumber);
+        DataList[DayNumber] = record is not null ? new List<WeatherRecordBase> { record } : new List<WeatherRecordBase>();
 
         // Call StateHasChanged using InvokeAsync for thread safety.
         await InvokeAsync(StateHasChanged);
