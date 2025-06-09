@@ -79,7 +79,7 @@ namespace bb1.Components.Models
         public DbSet<OpenMeteoRecord> OpenMeteoRecords { get; set; }
         public DbSet<ApiRecord> ApiRecords { get; set; } = null!;
         public DbSet<CityRecord> CityRecords { get; set; }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder) //one list for multiple tables. TODO: Make a parser like file for Entities.
         {
             modelBuilder.Entity<OpenWeatherRecord>(entity =>
             {

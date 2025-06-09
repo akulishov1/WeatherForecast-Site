@@ -1,5 +1,7 @@
 ﻿namespace bb1.Services
 {
+    // TODO: If First Day is non valid, it won't be checked and reprocessed by services anyway
+    // quite critical bug, but even not a medium priority, because data update goes like a solid block replacement
     public class WeatherDataVerification
     {
         private readonly IWeatherDataRepository _repository;

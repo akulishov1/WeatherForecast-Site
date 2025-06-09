@@ -47,7 +47,7 @@ namespace bb1.Services
                 record.MinTemperature = temps.Min();
                 record.MaxTemperature = temps.Max();
 
-                record.City = cityName;  // Заполняем название города
+                record.City = cityName;  //Claims chosen city from razor to list
 
                 records.Add(record);
                 extractionDate = extractionDate.AddDays(1);
