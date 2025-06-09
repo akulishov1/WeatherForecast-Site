@@ -3,51 +3,68 @@ using bb1.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using bb1.Components.Models;
-using static bb1.Services.WeatherDataRequestService;
+using bb1.Services.WeatherInterfaces;
+using bb1.Services.WDRequestListFormats;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var parserInterface = typeof(IWeatherDataParser);
+var parserTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => parserInterface.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+foreach (var parserType in parserTypes)
+{
+    builder.Services.AddScoped(typeof(IWeatherDataParser), parserType);
+}
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDevExpressBlazor(options => {
+builder.Services.AddDevExpressBlazor(options =>
+{
     options.BootstrapVersion = DevExpress.Blazor.BootstrapVersion.v5;
     options.SizeMode = DevExpress.Blazor.SizeMode.Medium;
 });
+
 builder.Services.AddMvc();
+builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<WeatherDataRequestService>();
-builder.Services.AddScoped<WeatherDataRequestService.WeatherService>();
-builder.Services.AddHttpClient<WeatherDataRequestService.WeatherService>();
-builder.Services.AddScoped<WeatherRepositoryService>();
 builder.Services.AddScoped<WeatherRecordsService>();
-builder.Services.AddHttpClient<IWeatherService, WeatherService>();
-builder.Services.AddHttpClient<IWeatherService, WeatherDataRequestService.WeatherService>();
+builder.Services.AddScoped<IWeatherDataRepository, WeatherRecordsService>();
+builder.Services.AddScoped<WeatherProcessorService>();
+builder.Services.AddScoped<IWeatherDataProcessor, WeatherProcessorService>();
+builder.Services.AddScoped<IWeatherService, WeatherDataRequestService>();
+builder.Services.AddScoped<WeatherDataVerification>();
 
 builder.Services.AddCascadingAuthenticationState();
 
-builder.Services.AddAuthentication(options => {
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 })
-    .AddIdentityCookies();
+.AddIdentityCookies();
 
 var DefaultConnectionStringToSQL = builder.Configuration.GetConnectionString("DbConnectionParameters");
-builder.Services.AddDbContextFactory<WeatherDbContext>(options => options.UseSqlServer(DefaultConnectionStringToSQL));
+builder.Services.AddDbContextFactory<WeatherDbContext>(options =>
+    options.UseSqlServer(DefaultConnectionStringToSQL));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) {
+if (app.Environment.IsDevelopment())
+{
     app.UseMigrationsEndPoint();
-} else {
+}
+else
+{
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseHttpsRedirection();
 
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 

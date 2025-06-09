@@ -1,60 +1,92 @@
 ﻿using bb1.Components.Models;
 using bb1.Services.WDRequestListFormats;
 using System.Text.Json;
-
+using bb1.Services.WeatherInterfaces;
+using Microsoft.EntityFrameworkCore;
 namespace bb1.Services
 {
-    public class WeatherDataRequestService
+
+    public class WeatherDataRequestService : IWeatherService
     {
-        public interface IWeatherService
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly WeatherDbContext _dbContext;
+        private readonly Dictionary<string, IWeatherDataParser> _parsers;
+
+        public WeatherDataRequestService(
+            IHttpClientFactory httpClientFactory,
+            WeatherDbContext dbContext,
+            IEnumerable<IWeatherDataParser> parsers)
         {
-            Task<WeatherDataCollection> FetchWeatherDataAsync(int siteId);
+            _httpClientFactory = httpClientFactory;
+            _dbContext = dbContext;
+
+            _parsers = parsers.ToDictionary(
+                p => p.GetType().Name.Replace("Parser", ""),
+                StringComparer.OrdinalIgnoreCase);
         }
-        public class WeatherService : IWeatherService
+
+        public async Task<WeatherDataCollection> FetchWeatherDataAsync(string siteKey,float latitude,float longitude)
         {
-            private readonly HttpClient _httpClient;
-            private readonly IConfiguration _configuration;
+            var api = await _dbContext.ApiRecords
+        .AsNoTracking()
+        .FirstOrDefaultAsync(r => r.Key == siteKey);
 
-            public WeatherService(HttpClient httpClient, IConfiguration configuration)
+            if (api == null)
+                throw new InvalidOperationException($"API config for key '{siteKey}' not found.");
+
+            string url = api.BaseApiUrl
+                .Replace("{latitude}", latitude.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                .Replace("{longitude}", longitude.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+            if (api.IsEnabled && !string.IsNullOrWhiteSpace(api.ApiKey))
             {
-                _httpClient = httpClient;
-                _configuration = configuration;
+                url = url.Replace("{ApiKey}", api.ApiKey);
+            }
+            else
+            {
+                url = url.Replace("{ApiKey}", string.Empty);
             }
 
-            public async Task<WeatherDataCollection> FetchWeatherDataAsync(int siteId)
+            url = url.Replace("&&", "&").TrimEnd('&', '?');
+
+            if (url.StartsWith("$"))
             {
-                try
-                {
-                    string apiUrl;
-                    IWeatherDataParser parser;
-
-                    switch (siteId)
-                    {
-                        case 1:
-                            string apiKey = _configuration["WeatherSettings:ApiKey"];
-                            apiUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat=49.44&lon=32.05&units=metric&appid={apiKey}";
-                            parser = new OpenWeatherMapParser();
-                            break;
-
-                        case 2:
-                            apiUrl = "https://api.open-meteo.com/v1/forecast?latitude=49.44&longitude=32.05&hourly=temperature_2m,wind_speed_10m";
-                            parser = new OpenMeteoParser();
-                            break;
-
-                        default:
-                            throw new ArgumentException("Unknown site ID");
-                    }
-
-                    var response = await _httpClient.GetStringAsync(apiUrl);
-                    var json = JsonDocument.Parse(response);
-                    return parser.Parse(json.RootElement);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching weather data: {ex.Message}");
-                    return new WeatherDataCollection();
-                }
+                url = url.Substring(1);
             }
+
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"API error {(int)response.StatusCode}: {response.ReasonPhrase}. Body: {errorBody}");
+            }
+
+            var rawContent = await response.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(rawContent))
+                throw new InvalidOperationException($"API '{siteKey}' returned empty response.");
+
+            JsonDocument jsonDoc;
+            try
+            {
+                jsonDoc = JsonDocument.Parse(rawContent);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"API '{siteKey}' response is not valid JSON:\n{rawContent}", ex);
+            }
+
+            var root = jsonDoc.RootElement;
+
+            string parserKey = api.ApiParserReference?.Replace("Parser", "") ?? "";
+
+            if (!_parsers.TryGetValue(parserKey, out var parser))
+                throw new InvalidOperationException($"Parser '{api.ApiParserReference}' is not registered.");
+
+            return parser.Parse(root);
         }
     }
 }

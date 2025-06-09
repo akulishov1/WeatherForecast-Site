@@ -36,8 +36,26 @@ namespace bb1.Components.Models
         public double AvgWindSpeed { get; set; }
         public double MinTemperature { get; set; }
         public double MaxTemperature { get; set; }
+        public string City {  get; set; }
     }
-
+    public class ApiRecord
+    {
+        public int Id { get; set; }
+        public string Key { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string BaseApiUrl { get; set; } = null!;
+        public bool IsEnabled { get; set; }
+        public string? ApiKey { get; set; }
+        public string? TableReference { get; set; }
+        public string? ApiParserReference { get; set; }
+    }
+    public class CityRecord
+    {
+        public int Id { get; set; }
+        public string CityName { set; get; } = null!;
+        public float Latitude { get; set; }
+        public float Longitude { get; set; }
+    }
     // Entity for OpenWeather source
     public class OpenWeatherRecord : WeatherRecordBase
     {
@@ -59,14 +77,23 @@ namespace bb1.Components.Models
 
         public DbSet<OpenWeatherRecord> OpenWeatherRecords { get; set; }
         public DbSet<OpenMeteoRecord> OpenMeteoRecords { get; set; }
-
+        public DbSet<ApiRecord> ApiRecords { get; set; } = null!;
+        public DbSet<CityRecord> CityRecords { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<OpenWeatherRecord>().ToTable("OpenWeatherRecords")
-                .HasKey(r => r.Id);
+            modelBuilder.Entity<OpenWeatherRecord>(entity =>
+            {
+                entity.ToTable("OpenWeatherRecords");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.Id).ValueGeneratedOnAdd();
+            });
 
-            modelBuilder.Entity<OpenMeteoRecord>().ToTable("OpenMeteoRecords")
-                .HasKey(r => r.Id);
+            modelBuilder.Entity<OpenMeteoRecord>(entity =>
+            {
+                entity.ToTable("OpenMeteoRecords");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.Id).ValueGeneratedOnAdd();
+            });
         }
     }
 }
