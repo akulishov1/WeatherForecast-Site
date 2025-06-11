@@ -50,7 +50,7 @@ namespace bb1.Services
             if (queryable == null)
                 throw new InvalidOperationException($"Property {tableReference} is not IQueryable");
 
-            return queryable.Cast<WeatherRecordBase>().AsNoTracking(); // добавьте AsNoTracking
+            return queryable.Cast<WeatherRecordBase>().AsNoTracking(); 
         }
         public async Task<bool> AnyByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today)
         {
@@ -104,27 +104,6 @@ namespace bb1.Services
                 throw new Exception($"Site with Id {siteId} not found");
 
             return record.TableReference;
-        }
-        public async Task<string> GetApiKeyBySiteIdAsync(int siteId)
-        {
-            using var context = _contextFactory.CreateDbContext();
-            var record = await context.ApiRecords.FirstOrDefaultAsync(r => r.Id == siteId);
-            if (record == null)
-                throw new Exception($"Site with Id {siteId} not found");
-
-            return record.Key; // <-- Здесь именно ключ
-        }
-        public async Task<bool> IsDataUpToDateAsync(string tableReference)
-        {
-            var today = DateTime.Now.Date;
-            var query = GetRecordsQueryable(tableReference);
-            return await query.AnyAsync(r => r.CellDate == today);
-        }
-
-        public async Task<bool> IsTableEmptyAsync(string tableReference)
-        {
-            var query = GetRecordsQueryable(tableReference);
-            return !await query.AnyAsync();
         }
         public async Task<List<CityRecord>> GetListOfAllCitiesAsync()
         {
