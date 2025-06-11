@@ -57,6 +57,7 @@ namespace bb1.Components.Models
         public float Longitude { get; set; }
     }
     // Entity for OpenWeather source
+    [Table("OpenWeatherRecords")]
     public class OpenWeatherRecord : WeatherRecordBase
     {
     }
@@ -67,7 +68,6 @@ namespace bb1.Components.Models
     {
     }
 
-    // DbContext with both tables
     public class WeatherDbContext : DbContext
     {
         public WeatherDbContext(DbContextOptions<WeatherDbContext> options)
@@ -77,23 +77,7 @@ namespace bb1.Components.Models
 
         public DbSet<OpenWeatherRecord> OpenWeatherRecords { get; set; }
         public DbSet<OpenMeteoRecord> OpenMeteoRecords { get; set; }
-        public DbSet<ApiRecord> ApiRecords { get; set; } = null!;
+        public DbSet<ApiRecord> ApiRecords { get; set; }
         public DbSet<CityRecord> CityRecords { get; set; }
-        protected override void OnModelCreating(ModelBuilder modelBuilder) //one list for multiple tables. TODO: Make a parser like file for Entities.
-        {
-            modelBuilder.Entity<OpenWeatherRecord>(entity =>
-            {
-                entity.ToTable("OpenWeatherRecords");
-                entity.HasKey(r => r.Id);
-                entity.Property(r => r.Id).ValueGeneratedOnAdd();
-            });
-
-            modelBuilder.Entity<OpenMeteoRecord>(entity =>
-            {
-                entity.ToTable("OpenMeteoRecords");
-                entity.HasKey(r => r.Id);
-                entity.Property(r => r.Id).ValueGeneratedOnAdd();
-            });
-        }
     }
 }

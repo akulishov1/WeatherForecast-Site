@@ -6,8 +6,15 @@ using bb1.Components.Models;
 using bb1.Services.WeatherInterfaces;
 using bb1.Services.WDRequestListFormats;
 using System.Reflection;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    builder.Configuration.GetSection("Kestrel").Bind(options);
+});
 
 var parserInterface = typeof(IWeatherDataParser);
 var parserTypes = Assembly.GetExecutingAssembly()
@@ -64,7 +71,6 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -72,4 +78,23 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AllowAnonymous();
 
-app.Run();
+var runTask = app.RunAsync();
+var isRunningInIDE = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_IDE") == "true";
+
+if (!isRunningInIDE) 
+{
+    try
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "http://localhost:5000/",
+            UseShellExecute = true
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Couldn't launch the server: {ex.Message}");
+    }
+}
+
+await runTask;

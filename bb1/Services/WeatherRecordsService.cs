@@ -8,9 +8,9 @@ namespace bb1.Services
     public interface IWeatherDataRepository
     {
         IQueryable<WeatherRecordBase> GetRecordsQueryable(string tableReference);
-        Task<int> CountByCityAsync(string tableReference, string cityName);
-        Task<bool> AnyByCityAndDateAsync(string tableReference, string cityName, DateTime date);
         Task DeleteAllByCityAsync(string tableReference, string cityName);
+        Task<bool> AnyByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today);
+        Task<int> CountByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today);
     }
     public class WeatherRecordsService : IWeatherDataRepository
     {
@@ -37,34 +37,35 @@ namespace bb1.Services
         // Получить DbSet по имени таблицы из ApiRecords через Reflection
         public IQueryable<WeatherRecordBase> GetRecordsQueryable(string tableReference)
         {
-            // В DbContext у вас есть свойства DbSet<...> с именами, соответствующими tableReference
-            var property = _dbContext.GetType().GetProperty(tableReference);
+            var context = _contextFactory.CreateDbContext();
+
+            var property = context.GetType().GetProperty(tableReference);
             if (property == null)
                 throw new ArgumentException($"TableReference '{tableReference}' not found in DbContext");
 
-            // Получаем DbSet<T>
-            var dbSet = property.GetValue(_dbContext);
+            var dbSet = property.GetValue(context);
 
-            // DbSet реализует IQueryable<T>, нужно привести к IQueryable<WeatherRecordBase>
             var queryable = dbSet as IQueryable;
 
             if (queryable == null)
                 throw new InvalidOperationException($"Property {tableReference} is not IQueryable");
 
-            // IQueryable<T> — мы хотим IQueryable<WeatherRecordBase>
-            // Можно использовать ковариантность, если все типы наследуют WeatherRecordBase
-            return queryable.Cast<WeatherRecordBase>();
+            return queryable.Cast<WeatherRecordBase>().AsNoTracking(); // добавьте AsNoTracking
         }
-        public async Task<bool> AnyByCityAndDateAsync(string tableReference, string cityName, DateTime date)
+        public async Task<bool> AnyByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today)
         {
             var query = GetRecordsQueryable(tableReference);
-            return await query.AnyAsync(r => EF.Property<string>(r, "City") == cityName && EF.Property<DateTime>(r, "CellDate") == date);
+            return await query.AnyAsync(r =>
+                EF.Property<string>(r, "City") == cityName &&
+                EF.Property<DateTime>(r, "CellDate") >= today);
         }
 
-        public async Task<int> CountByCityAsync(string tableReference, string cityName)
+        public async Task<int> CountByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today)
         {
             var query = GetRecordsQueryable(tableReference);
-            return await query.CountAsync(r => EF.Property<string>(r, "City") == cityName);
+            return await query.CountAsync(r =>
+                EF.Property<string>(r, "City") == cityName &&
+                EF.Property<DateTime>(r, "CellDate") >= today);
         }
 
         public async Task DeleteAllByCityAsync(string tableReference, string cityName)
