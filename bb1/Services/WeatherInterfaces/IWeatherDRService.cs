@@ -2,7 +2,7 @@
 
 namespace bb1.Services.WeatherInterfaces
 {
-    public interface IWeatherService
+    public interface IWeatherDRService
     {
         Task<WeatherDataCollection> FetchWeatherDataAsync(string siteKey, float latitude, float longitude);
     }

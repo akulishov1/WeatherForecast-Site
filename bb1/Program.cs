@@ -43,7 +43,7 @@ builder.Services.AddScoped<WeatherRecordsService>();
 builder.Services.AddScoped<IWeatherDataRepository, WeatherRecordsService>();
 builder.Services.AddScoped<WeatherProcessorService>();
 builder.Services.AddScoped<IWeatherDataProcessor, WeatherProcessorService>();
-builder.Services.AddScoped<IWeatherService, WeatherDataRequestService>();
+builder.Services.AddScoped<IWeatherDRService, WeatherDataRequestService>();
 builder.Services.AddScoped<WeatherDataVerification>();
 
 builder.Services.AddCascadingAuthenticationState();

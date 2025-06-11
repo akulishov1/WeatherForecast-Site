@@ -1,11 +1,9 @@
 ﻿using bb1.Components.Models;
+using bb1.Services.WeatherInterfaces;
 
 namespace bb1.Services
 {
-    public interface IWeatherDataProcessor
-    {
-        List<T> MapToRecordsSimple<T>(WeatherDataCollection weatherData, Func<T> recordFactory, string cityName) where T : WeatherRecordBase;
-    }
+    
     public class WeatherProcessorService : IWeatherDataProcessor
     {
         public List<T> MapToRecordsSimple<T>(WeatherDataCollection weatherData, Func<T> recordFactory, string cityName) where T : WeatherRecordBase

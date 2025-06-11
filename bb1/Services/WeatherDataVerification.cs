@@ -1,4 +1,6 @@
-﻿namespace bb1.Services
+﻿using bb1.Services.WeatherInterfaces;
+
+namespace bb1.Services
 {
     public class WeatherDataVerification
     {

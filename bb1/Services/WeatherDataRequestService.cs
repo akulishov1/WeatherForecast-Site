@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace bb1.Services
 {
 
-    public class WeatherDataRequestService : IWeatherService
+    public class WeatherDataRequestService : IWeatherDRService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly WeatherDbContext _dbContext;

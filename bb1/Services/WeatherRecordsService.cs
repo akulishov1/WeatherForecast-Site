@@ -5,27 +5,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace bb1.Services
 {
-    public interface IWeatherDataRepository
-    {
-        IQueryable<WeatherRecordBase> GetRecordsQueryable(string tableReference);
-        Task DeleteAllByCityAsync(string tableReference, string cityName);
-        Task<bool> AnyByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today);
-        Task<int> CountByCityAndFutureDatesAsync(string tableReference, string cityName, DateTime today);
-    }
     public class WeatherRecordsService : IWeatherDataRepository
     {
         private readonly WeatherDbContext _dbContext;
         private readonly IServiceProvider _serviceProvider;
         private readonly IWeatherDataProcessor _processor;
         private readonly IDbContextFactory<WeatherDbContext> _contextFactory;
-        private readonly IWeatherService _weatherService;
+        private readonly IWeatherDRService _weatherService;
         
         public WeatherRecordsService(
         WeatherDbContext dbContext,
         IServiceProvider serviceProvider,
         IWeatherDataProcessor processor,
         IDbContextFactory<WeatherDbContext> contextFactory,
-        IWeatherService weatherService) 
+        IWeatherDRService weatherService) 
         {
             _dbContext = dbContext;
             _serviceProvider = serviceProvider;
