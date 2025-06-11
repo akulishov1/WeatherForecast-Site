@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace bb1.Services
 {
-    public class WeatherRecordsService : IWeatherDataRepository
+    public class WeatherRecordsService : IWeatherRecords
     {
         private readonly WeatherDbContext _dbContext;
         private readonly IServiceProvider _serviceProvider;

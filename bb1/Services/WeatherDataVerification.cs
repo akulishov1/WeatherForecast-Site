@@ -4,9 +4,9 @@ namespace bb1.Services
 {
     public class WeatherDataVerification
     {
-        private readonly IWeatherDataRepository _repository;
+        private readonly IWeatherRecords _repository;
 
-        public WeatherDataVerification(IWeatherDataRepository repository)
+        public WeatherDataVerification(IWeatherRecords repository)
         {
             _repository = repository;
         }

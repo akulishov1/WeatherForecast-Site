@@ -40,7 +40,7 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<WeatherDataRequestService>();
 builder.Services.AddScoped<WeatherRecordsService>();
-builder.Services.AddScoped<IWeatherDataRepository, WeatherRecordsService>();
+builder.Services.AddScoped<IWeatherRecords, WeatherRecordsService>();
 builder.Services.AddScoped<WeatherProcessorService>();
 builder.Services.AddScoped<IWeatherDataProcessor, WeatherProcessorService>();
 builder.Services.AddScoped<IWeatherDRService, WeatherDataRequestService>();

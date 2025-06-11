@@ -2,7 +2,7 @@
 
 namespace bb1.Services.WeatherInterfaces
 {
-    public interface IWeatherDataRepository
+    public interface IWeatherRecords
     {
         IQueryable<WeatherRecordBase> GetRecordsQueryable(string tableReference);
         Task DeleteAllByCityAsync(string tableReference, string cityName);
